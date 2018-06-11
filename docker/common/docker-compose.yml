@@ -1,0 +1,82 @@
+version: '2'
+services:
+  # service discovery replication
+  servicediscoveryserver1:
+     image:   garciapacho/garciapacho-servicediscoverysvr:garciapacho-servicediscoverysvr-v2-tag
+     ports:
+       - "8770:8770"
+     environment:
+        EXTRA_ARGS: "-Deureka.server.waitTimeInMsWhenSyncEmpty=5 
+                    -Dspring.profiles.active=useast1c"         
+
+  servicediscoveryserver2: 
+     image:   garciapacho/garciapacho-servicediscoverysvr:garciapacho-servicediscoverysvr-v2-tag
+     ports:
+       - "8771:8771"
+     environment:
+        EXTRA_ARGS: "-Dspring.profiles.active=useast1d 
+                    -Deureka.server.waitTimeInMsWhenSyncEmpty=5"    
+
+  # configuration server for each zone 
+  configurationserver1:
+     image:   garciapacho/garciapacho-confsvr:garciapacho-confsvr-tag
+     ports:
+       - "8898:8898"
+     environment:
+        EXTRA_ARGS: "-Dspring.profiles.active=useast1c "         
+
+  configurationserver2:
+     image:   garciapacho/garciapacho-confsvr:garciapacho-confsvr-tag
+     ports:
+       - "8899:8899"
+     environment:
+        EXTRA_ARGS: "-Dspring.profiles.active=useast1d"         
+  
+  # service provider for each zone 
+  appservice1:
+      image: garciapacho/garciapacho-appservice:garciapacho-appservice-v2-tag
+      ports:
+        - "8080:8080"
+      environment:
+        CONFIG_HOSTNAME: "configurationserver1"
+        CONFIG_PORT:   "8898"      
+        EUREKASERVER_HOSTNAME: "servicediscoveryserver1"
+        EUREKASERVER_PORT:   "8770"      
+        EXTRA_ARGS: "-Dspring.profiles.active=useast1c 
+                     -Dspring.cloud.config.uri=http://configurationserver1:8898 "
+
+
+  appservice2:
+      image: garciapacho/garciapacho-appservice:garciapacho-appservice-v2-tag
+      ports:
+        - "8081:8081"
+      environment:
+        CONFIG_HOSTNAME: "configurationserver2"
+        CONFIG_PORT:   "8899"            
+        EUREKASERVER_HOSTNAME: "servicediscoveryserver2"
+        EUREKASERVER_PORT:   "8771"      
+        EXTRA_ARGS: "-Dspring.profiles.active=useast1d -Dspring.cloud.config.uri=http://configurationserver2:8899"
+
+  # service consumer for each zone
+  appclient1:
+      image: garciapacho/garciapacho-appclient:garciapacho-appclient-v2-tag
+      ports:
+        - "8082:8082"
+      environment:
+        CONFIG_HOSTNAME: "configurationserver1"
+        CONFIG_PORT:   "8898"      
+        EUREKASERVER_HOSTNAME: "servicediscoveryserver1"
+        EUREKASERVER_PORT:   "8770"      
+        EXTRA_ARGS: "-Dspring.profiles.active=useast1c -Dspring.cloud.config.uri=http://configurationserver1:8898"
+
+  appclient2:
+      image: garciapacho/garciapacho-appclient:garciapacho-appclient-v2-tag
+      ports:
+        - "8083:8083"
+      environment:
+        CONFIG_HOSTNAME: "configurationserver2"
+        CONFIG_PORT:   "8899"            
+        EUREKASERVER_HOSTNAME: "servicediscoveryserver2"
+        EUREKASERVER_PORT:   "8771"      
+        EXTRA_ARGS: "-Dspring.profiles.active=useast1d  -Dspring.cloud.config.uri=http://configurationserver2:8899"
+

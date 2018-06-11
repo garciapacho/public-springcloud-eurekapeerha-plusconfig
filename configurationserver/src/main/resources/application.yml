@@ -1,0 +1,10 @@
+spring:
+  cloud:
+    config:
+      server:
+        encrypt:
+          enabled: false
+        git:
+          uri: https://github.com/garciapacho/public-springcloud-eurekapeerha-plusconfig-repo-
+          searchPaths: appservice, appclient
+          cloneOnStart: true
